@@ -15,7 +15,7 @@ resource "aws_instance" "windows_example_terraForm" {
   user_data     = <<EOF
     <powershell> 
     net user ${var.INSTANCE_USERNAME} '${var.INSTANCE_PASSWORD}' /add /y
-    net localgroup administrators "${var.INSTANCE_USERNAME}" /add 
+    net localgroup administrators ${var.INSTANCE_USERNAME} /add 
 
     winrm quickconfig -q
     winrm set winrm/config/winrs '@{MaxMemoryPerShellMB="300"}'
