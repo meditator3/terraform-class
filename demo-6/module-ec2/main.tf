@@ -43,7 +43,7 @@ resource "aws_instance" "server" {
         # this allows a copy of scripts and files to be copied to the instance
         # so lookup is to look for service configuration(apache or something
         # else) + the platform
-        source    = "{path.module}/shared/scripts.${lookup(var.service_conf, var.platform)}"
+        source    = "${path.module}/shared/scripts.${lookup(var.service_conf, var.platform)}"
 
         destination = "/tmp/${lookup(var.service_conf, var.platform)}"
     }
@@ -89,13 +89,20 @@ resource "aws_security_group" "sg-server" {
         from_port = 22
         to_port   = 22
         protocol  = "tcp"
-        cidr_blocks = "0.0.0.0/0"
+        cidr_blocks = ["0.0.0.0/0"]
+    }
+    ingress {
+        from_port = 80
+        to_port   = 80
+        protocol  = "tcp"
+        cidr_blocks = ["0.0.0.0/0"]
     }
     egress {
+        # 0 to 0 over -1 protocol means ALL traffic
         from_port = 0
         to_port   = 0
         protocol  = "-1"
-        cidr_blocks = "0.0.0.0/0"
+        cidr_blocks = ["0.0.0.0/0"]
     }
     
 }

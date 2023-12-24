@@ -64,5 +64,6 @@ variable "subnets" {
 }
 
 variable "vpc_id" {
-    default = "${var.vpc_id}"
+    type = string
+    description = "ID of the vpc to use"
 }
