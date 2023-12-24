@@ -43,7 +43,7 @@ resource "aws_instance" "server" {
         # this allows a copy of scripts and files to be copied to the instance
         # so lookup is to look for service configuration(apache or something
         # else) + the platform
-        source    = "${path.module}/shared/scripts.${lookup(var.service_conf, var.platform)}"
+        source    = "${path.module}/shared/scripts/${lookup(var.service_conf, var.platform)}"
 
         destination = "/tmp/${lookup(var.service_conf, var.platform)}"
     }
