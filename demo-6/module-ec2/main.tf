@@ -55,7 +55,7 @@ resource "aws_instance" "server" {
             # and saves them into the file servers-count
             "echo ${var.servers} > /tmp/server-count",
             # give the private ip of the first instance(0), save it server-addr
-            "echo ${aws_instance.server.0.private_ip} > /temp/server-addr"
+            "echo ${aws_instance.server.0.private_ip} > /tmp/server-addr"
         ]
     }
 }  
