@@ -53,7 +53,7 @@ resource "aws_instance" "server" {
         inline = [
             # gives the ip addresses of the servers
             # and saves them into the file servers-count
-            "echo ${var.servers} > /tmp/servers-count",
+            "echo ${var.servers} > /tmp/server-count",
             # give the private ip of the first instance(0), save it server-addr
             "echo ${aws_instance.server.0.private_ip} > /temp/server-addr"
         ]
