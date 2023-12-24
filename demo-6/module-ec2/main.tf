@@ -61,7 +61,7 @@ resource "aws_instance" "server" {
 }  
 
 resource "aws_security_group" "sg-server" {
-    name = "server_${var.platform}"
+    name = "server2_${var.platform}"
     description = "server internal traffic"
     vpc_id = "${var.vpc_id}"
 
