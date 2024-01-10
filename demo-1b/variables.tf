@@ -7,7 +7,7 @@ variable "secret_key" {
 }
 variable "region" {
     description = "Insert your AWS region Code"
-    default     = "us-east-1"
+    default     = "eu-west-2"
 }
 variable "AMIS" {
         description = "choose your AMI in context of the region"
