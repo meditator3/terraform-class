@@ -12,16 +12,13 @@ resource "aws_instance" "ansible-remote" {
             source     = "ansible_module/script.sh"
             destination= "/tmp/script.sh"
     }
-    provisioner "file" {                    # provision script file for ansible deployment on instance
-            source     = "ansible_module/hosts_new"
-            destination= "/tmp/hosts_new"
-    }
+   
     provisioner "remote-exec" {
         inline = [                   # execute the script file
             "chmod +x /tmp/script.sh",
             "sudo sed -i -e 's/\r$//' /tmp/script.sh", # remove the CR characters
             "sudo /tmp/script.sh",   #invoke script
-            "echo '${file("~/.ssh/id_rsa")}' >> ~/.ssh/id_rsa.copy"  # copy sensitive
+            "sudo echo '${file("~/.ssh/id_rsa")}' >>~/.ssh/id_rsa.copy"
         ]
     }        
     connection {                   # connect with instance
@@ -31,7 +28,7 @@ resource "aws_instance" "ansible-remote" {
         private_key = file("${var.PATH_TO_PRIVATE_KEY}")
     }        
      provisioner "local-exec" {
-    command = "echo ${aws_instance.ansible-remote.private_ip} >> private_ip.txt"
+    command = "echo ${aws_instance.ansible-remote.private_ip} >> private_ip_ansible.txt"
   }
 }    
    # output check for subnets and vpc id
@@ -49,7 +46,7 @@ data "aws_subnets" "existing_vpc_subnets" {
      } 
 }
 
-output "ip" {
+output "ip_ansible" {
     value = aws_instance.ansible-remote.public_ip
   }  
 resource "aws_instance" "master-k8s" { # instance for cluster
@@ -65,4 +62,15 @@ resource "aws_instance" "master-k8s" { # instance for cluster
            "echo '${file("~/.ssh/id_rsa.pub")}' >> ~/.ssh/authorized_keys"
         ]
     }
+    connection {                   # connect with instance
+        host = coalesce(self.public_ip, self.private_ip)
+        type = "ssh"
+        user = "${var.INSTANCE_USERNAME}"
+        private_key = file("${var.PATH_TO_PRIVATE_KEY}")
+    }        
+   
+}
+
+output "ip_k8s_master" { #master private ip in case needed
+    value = aws_instance.master-k8s.private_ip
 }

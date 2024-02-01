@@ -13,3 +13,6 @@ output "aws_region" {
 output "ansible_ips" {
     value = aws_instance.ansible-remote.private_ip
 }
+output "master_ip" {
+    value = aws_instance.master-k8s.private_ip
+}
