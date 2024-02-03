@@ -10,9 +10,15 @@ output "subnets_ids" { # output all subnets
 output "aws_region" {
     value = var.region
 }
-output "ansible_ips" {
+output "ansible_ip_prv" {
     value = aws_instance.ansible-remote.private_ip
 }
-output "master_ip" {
+output "master_ip_prv" {
     value = aws_instance.master-k8s.private_ip
+}
+output "ansible_ip_public" {
+    value = aws_instance.ansible-remote.public_ip
+}
+output "master_ip_public" {
+    value = aws_instance.master-k8s.public_ip
 }
