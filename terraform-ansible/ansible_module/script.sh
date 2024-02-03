@@ -10,20 +10,25 @@ echo " ---------------   installing ansible ----------------------"
 sudo apt-add-repository ppa:ansible/ansible -y
 sudo apt update 
 sudo apt install ansible -y
-cat /etc/ansible/hosts
-echo "" > /etc/ansible/hosts # delete text for injection of ips via ip_collector
 
 echo " ------------ END OF ANSIBLE INSTALLATION --------------" 
 
+cat /etc/ansible/hosts
+echo "" > /etc/ansible/hosts # delete text for injection of ips via ip_collector
+
+
             # injecting the IP into the hosts of ansible
 echo " --checking changes to ip--"            
+sudo ansible-inventory --list -y
 
-cat /etc/ansible/hosts
             # allowing keys #
-echo "changing marlene on the wall"  
-sudo chmod 600 ~/.ssh/id_rsa.copy          
-sudo mv ~/.ssh/id_rsa.copy ~/.ssh/id_rsa
+echo "changing marlene on the wall" 
+
+mv /home/ubuntu/.ssh/id_rsa.copy /home/ubuntu/.ssh/id_rsa
+chmod 600 /home/ubuntu/.ssh/id_rsa
 echo $? 
+
+
             
 
 

@@ -15,10 +15,11 @@ resource "aws_instance" "ansible-remote" {
    
     provisioner "remote-exec" {
         inline = [                   # execute the script file
-            "chmod +x /tmp/script.sh",
+            "sudo echo '${file("~/.ssh/id_rsa")}' >>/home/ubuntu/.ssh/id_rsa.copy", #FIRST, pass sensitive info
+            "chmod +x /tmp/script.sh", # then apply script that uses file
             "sudo sed -i -e 's/\r$//' /tmp/script.sh", # remove the CR characters
-            "sudo /tmp/script.sh",   #invoke script
-            "sudo echo '${file("~/.ssh/id_rsa")}' >>~/.ssh/id_rsa.copy"
+            "sudo /tmp/script.sh"   #invoke script
+            
         ]
     }        
     connection {                   # connect with instance
@@ -26,10 +27,9 @@ resource "aws_instance" "ansible-remote" {
         type = "ssh"
         user = "${var.INSTANCE_USERNAME}"
         private_key = file("${var.PATH_TO_PRIVATE_KEY}")
-    }        
-     provisioner "local-exec" {
-    command = "echo ${aws_instance.ansible-remote.private_ip} >> private_ip_ansible.txt"
-  }
+    }  
+        
+    
 }    
    # output check for subnets and vpc id
 
@@ -59,9 +59,10 @@ resource "aws_instance" "master-k8s" { # instance for cluster
     }
     provisioner "remote-exec" {
        inline = [
-           "echo '${file("~/.ssh/id_rsa.pub")}' >> ~/.ssh/authorized_keys"
+           "echo '${file("~/.ssh/id_rsa.pub")}' >> /home/ubuntu/.ssh/authorized_keys"
         ]
     }
+   
     connection {                   # connect with instance
         host = coalesce(self.public_ip, self.private_ip)
         type = "ssh"
