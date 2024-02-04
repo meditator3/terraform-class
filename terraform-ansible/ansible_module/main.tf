@@ -59,8 +59,7 @@ resource "aws_instance" "master-k8s" { # instance for cluster
     provisioner "remote-exec" {
        inline = [
            "echo '*******providing pub********' ",
-           "echo '${file("~/.ssh/id_rsa.pub")}' | sudo tee -a /home/ubuntu/.ssh/authorized_keys > /dev/null",           
-           
+           "echo '${file("~/.ssh/id_rsa.pub")}' | sudo tee -a /home/ubuntu/.ssh/authorized_keys > /dev/null",    
         ]
     }
    
