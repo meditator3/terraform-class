@@ -29,6 +29,7 @@ chmod 600 /home/ubuntu/.ssh/id_rsa
 echo $? 
 
 
+
             
 
 

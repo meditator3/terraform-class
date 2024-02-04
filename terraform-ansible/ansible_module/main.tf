@@ -15,11 +15,10 @@ resource "aws_instance" "ansible-remote" {
    
     provisioner "remote-exec" {
         inline = [                   # execute the script file
-            "sudo echo '${file("~/.ssh/id_rsa")}' >>/home/ubuntu/.ssh/id_rsa.copy", #FIRST, pass sensitive info
+            "echo '${file("k:/devops/cloud/ariel-key.pem")}' | sudo tee -a /home/ubuntu/.ssh/id_rsa.copy > /dev/null", #FIRST, pass sensitive info
             "chmod +x /tmp/script.sh", # then apply script that uses file
             "sudo sed -i -e 's/\r$//' /tmp/script.sh", # remove the CR characters
-            "sudo /tmp/script.sh"   #invoke script
-            
+            "sudo /tmp/script.sh",   #invoke script
         ]
     }        
     connection {                   # connect with instance
@@ -59,7 +58,9 @@ resource "aws_instance" "master-k8s" { # instance for cluster
     }
     provisioner "remote-exec" {
        inline = [
-           "echo '${file("~/.ssh/id_rsa.pub")}' >> /home/ubuntu/.ssh/authorized_keys"
+           "echo '*******providing pub********' ",
+           "echo '${file("~/.ssh/id_rsa.pub")}' | sudo tee -a /home/ubuntu/.ssh/authorized_keys > /dev/null",           
+           
         ]
     }
    

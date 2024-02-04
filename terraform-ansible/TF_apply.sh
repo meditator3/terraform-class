@@ -2,5 +2,5 @@
 
 terraform apply -auto-approve
 
-bash ip_collector.sh
+bash ./ip_collector.sh
 

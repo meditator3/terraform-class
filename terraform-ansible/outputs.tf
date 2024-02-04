@@ -27,6 +27,8 @@ output "subnet_names" { #display list to pass the names of all subnets
 output "public1_subnet" {
     value = local.subnet_public1
 }
+
+                # outputs of ansible hosts ip ##
 output "ansible_ip_prv" {
     value = module.ansible.ansible_ip_prv
 }
