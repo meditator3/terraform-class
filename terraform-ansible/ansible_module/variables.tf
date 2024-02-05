@@ -23,6 +23,7 @@ variable "public_subnet1" { # to be used by remote controller ansible instance
     type = string
 }
 
+
 variable "PATH_TO_PRIVATE_KEY" {
     description = "path to private key in your pc"
     default = "../demo-4/ariel-key.pem"
@@ -40,4 +41,10 @@ variable "INSTANCE_USERNAME" {
 variable "key" {
     description = "existing key-pair"
     default = "ariel-key"
+}
+variable "instance_count_worker" {
+  default = 2
+}
+variable "instance_count_master" {
+  default = 1
 }

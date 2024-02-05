@@ -4,7 +4,8 @@
 ANSIBLE_PUB=$(terraform output -raw ansible_ip_pub)
 ansible_ip=$(terraform output -raw ansible_ip_prv)
 master_ip=$(terraform output -raw master_ip_prv)
-node_ip=$(terraform output -raw master_ip_pub)
+node_ip1=$(terraform output -raw worker_ip_prv1)
+node_ip2=$(terraform output -raw worker_ip_prv2)
 file="hosts.yaml" #to reference inside the ansible 
 cluster_dns="arieldevops.tech"
 # transfer hosts.yaml to ansible machine
@@ -15,14 +16,40 @@ ssh -i k:/devops/cloud/ariel-key.pem -t ubuntu@$ANSIBLE_PUB << EOF
 cd kubespray/inventory/mycluster
 
 cp hosts.yaml hosts.yaml.bak
-echo $ansible_ip
+echo "backup hosts.yaml"
 echo "Update ansible_host, ip, and access_ip for each node"
 
-sed -i "/node1:/,/node2:/ {/ansible_host:/ s/ansible_host:.*/ansible_host: $ansible_ip/; /ip:/ s/ip:.*/ip: $ansible_ip/; /access_ip:/ s/access_ip:.*/access_ip: $ansible_ip/}" $file
-sed -i "/node2:/,/node3:/ {/ansible_host:/ s/ansible_host:.*/ansible_host: $master_ip/; /ip:/ s/ip:.*/ip: $master_ip/; /access_ip:/ s/access_ip:.*/access_ip: $master_ip/}" $file
-sed -i "/node3:/,/kube_control_plane:/ {/ansible_host:/ s/ansible_host:.*/ansible_host: $node_ip/; /ip:/ s/ip:.*/ip: $node_ip/; /access_ip:/ s/access_ip:.*/access_ip: $node_ip/}" $file
+sed -i "/node1:/,/node2:/ {/ansible_host:/ s/ansible_host:.*/ansible_host: $master_ip/; /ip:/ s/ip:.*/ip: $ansible_ip/; /access_ip:/ s/access_ip:.*/access_ip: $ansible_ip/}" $file
+sed -i "/node2:/,/node3:/ {/ansible_host:/ s/ansible_host:.*/ansible_host: $node_ip1/; /ip:/ s/ip:.*/ip: $master_ip/; /access_ip:/ s/access_ip:.*/access_ip: $master_ip/}" $file
+sed -i "/node3:/,/kube_control_plane:/ {/ansible_host:/ s/ansible_host:.*/ansible_host: $node_ip2/; /ip:/ s/ip:.*/ip: $node_ip/; /access_ip:/ s/access_ip:.*/access_ip: $node_ip/}" $file
 echo "hosts.yaml has been updated."
 cd group_vars/k8s_cluster/
 sed -i 's/cluster_name: cluster.local/cluster_name: $cluster_dns/' k8s-cluster.yml
 echo "k8s_cluster updated"
+cp addons.yml addons.yml.bak 
+echo "back up addons.yml"
+sed -i 's/dashboard_enabled: false/dashboard_enabled: true/' addons.yml
+sed -i 's/ingress_nginx_enabled: false/ingress_nginx_enabled: true/' addons.yml
+sed -i 's/ingress_nginx_host_network: false/ingress_nginx_host_network: true/' addons.yml
+sed -i 's/cert_manager_enabled: false/cert_manager_enabled: true/' addons.yml
+echo "addons.yml updated: ingress ngnix, dashboard, cert manager"
+
+echo "generating keys for cluster"
+sudo ssh-keygen -y -f /home/ubuntu/.ssh/id_rsa | sudo tee /home/ubuntu/.ssh/id_rsa.pub
+sudo ssh-copy-id -i /home/ubuntu/.ssh/id_rsa.pub ubuntu@$master_ip
+sudo ssh-copy-id -i /home/ubuntu/.ssh/id_rsa.pub ubuntu@$node_ip1
+sudo ssh-copy-id  -i /home/ubuntu/.ssh/id_rsa.pub ubuntu@$node_ip2
+
+echo "transfered keys"
+echo " updating groups"
+echo "ubuntu ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/ubuntu
+
+echo "** start cluster creation**"
+echo "----------------------------"
+echo "disabling ipv4 + swapoff "
+ansible all -i inventory/mycluster/hosts.yaml -m shell -a "echo 'net.ipv4.ip_forward=1' | sudo tee -a /etc/sysctl.conf" --private-key ~/.ssh/id_rsa
+ansible all -i inventory/mycluster/hosts.yaml -m shell -a "sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab && sudo swapoff -a" --private-key ~/.ssh/id_rsa
+echo "----------"
+echo " begin cluster creation! "
+ansible-playbook -i inventory/mycluster/hosts.yaml --become --become-user=root cluster.yml --private-key ~/.ssh/id_rsa
 EOF

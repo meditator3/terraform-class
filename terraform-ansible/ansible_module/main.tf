@@ -15,7 +15,7 @@ resource "aws_instance" "ansible-remote" {
    
     provisioner "remote-exec" {
         inline = [                   # execute the script file
-            "echo '${file("k:/devops/cloud/ariel-key.pem")}' | sudo tee -a /home/ubuntu/.ssh/id_rsa.copy > /dev/null", #FIRST, pass sensitive info
+            "echo '${file("k:/devops/cloud/ariel-key.pem")}' | tee -a /home/ubuntu/.ssh/id_rsa.copy > /dev/null", #FIRST, pass sensitive info
             "chmod +x /tmp/script.sh", # then apply script that uses file
             "sudo sed -i -e 's/\r$//' /tmp/script.sh", # remove the CR characters
             "sudo /tmp/script.sh",   #invoke script
@@ -37,24 +37,67 @@ data "aws_vpc" "existing_vpc" {
         Name = "ariel-vpc-project" # selecting the right VPC
     }
 }
-
+     # iteration over all subnets via vpc #
 data "aws_subnets" "existing_vpc_subnets" {
      filter {
         name = "vpc-id"  # pulling the id from the selected VPC
         values = [data.aws_vpc.existing_vpc.id]
      } 
 }
+  # selecting public subnets only
+locals {
+  selected_subnet_ids = [
+    element(data.aws_subnets.existing_vpc_subnets.ids, 0),  # Subnet 1
+    element(data.aws_subnets.existing_vpc_subnets.ids, 4),  # Subnet 4
+    element(data.aws_subnets.existing_vpc_subnets.ids, 5)   # Subnet 5
+  ]
+}
 
-output "ip_ansible" {
-    value = aws_instance.ansible-remote.public_ip
-  }  
 resource "aws_instance" "master-k8s" { # instance for cluster
     ami           = var.AMIS[var.region]
-    instance_type = "t2.micro"
-    subnet_id     = var.public_subnet1    
+    instance_type = "t2.xlarge"
+    count = var.instance_count_master
+       # using selected public subnets only for even distribution of instances over AZ's
+    subnet_id     = element(local.selected_subnet_ids, count.index % length(local.selected_subnet_ids))    
     key_name      = var.key
     tags = {
         Name = "TF-master-ariel-goingon"
+    }
+    provisioner "remote-exec" {
+       inline = [
+           "echo '*******providing pub********' ",
+           "echo '${file("~/.ssh/id_rsa.pub")}' | tee -a /home/ubuntu/.ssh/authorized_keys > /dev/null",    
+        ]
+    }
+   
+    connection {                   # connect with instance
+        host = coalesce(self.public_ip, self.private_ip)
+        type = "ssh"
+        user = "${var.INSTANCE_USERNAME}"
+        private_key = file("${var.PATH_TO_PRIVATE_KEY}")
+    }        
+   
+}
+
+
+   #         deploy instances over different AZ's for HA    **
+data "aws_availability_zones" "available" {
+  state = "available"
+}
+
+
+
+                             ## worker nodes instance  ##
+
+resource "aws_instance" "worker-k8s" {
+    ami           = var.AMIS[var.region]
+    instance_type = "t2.large"   
+    key_name      = var.key
+    count         = var.instance_count_worker
+             # Distribute instances across the available AZs
+    subnet_id     = element(local.selected_subnet_ids, count.index % length(local.selected_subnet_ids))    
+    tags = {
+        Name = "TF-worker-ariel-goingon"
     }
     provisioner "remote-exec" {
        inline = [
@@ -68,10 +111,6 @@ resource "aws_instance" "master-k8s" { # instance for cluster
         type = "ssh"
         user = "${var.INSTANCE_USERNAME}"
         private_key = file("${var.PATH_TO_PRIVATE_KEY}")
-    }        
-   
+    }   
 }
 
-output "ip_k8s_master" { #master private ip in case needed
-    value = aws_instance.master-k8s.private_ip
-}
