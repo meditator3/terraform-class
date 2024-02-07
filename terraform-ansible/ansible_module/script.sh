@@ -7,9 +7,14 @@ echo $PRIVATE_IP
 echo " the Private IP of the instance is: ${PRIVATE_IP}"
 echo " ---------------   installing ansible ----------------------"
 
-sudo apt-add-repository ppa:ansible/ansible -y
+echo "sudo apt-add-repository ppa:ansible/ansible -y"
 sudo apt update 
-sudo apt install ansible -y
+sudo apt install python3-pip -y
+sudo pip3 install ansible 
+echo "^^creating ansible assests^^"
+sudo mkdir -p /etc/ansible
+sudo touch /etc/ansible/ansible.cfg
+sudo touch /etc/ansible/hosts
 
 echo " ------------ END OF ANSIBLE INSTALLATION --------------" 
 

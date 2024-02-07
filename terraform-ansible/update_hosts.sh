@@ -4,6 +4,7 @@
 ANSIBLE_PUB=$(terraform output -raw ansible_ip_pub)
 ansible_ip=$(terraform output -raw ansible_ip_prv)
 master_ip=$(terraform output -raw master_ip_prv)
+MASTER_K8S_IP_PUB=$(terraform output -raw  master_ip_pub)
 node_ip1=$(terraform output -raw worker_ip_prv1)
 node_ip2=$(terraform output -raw worker_ip_prv2)
 file="hosts.yaml" #to reference inside the ansible 
@@ -19,9 +20,9 @@ cp hosts.yaml hosts.yaml.bak
 echo "backup hosts.yaml"
 echo "Update ansible_host, ip, and access_ip for each node"
 
-sed -i "/node1:/,/node2:/ {/ansible_host:/ s/ansible_host:.*/ansible_host: $master_ip/; /ip:/ s/ip:.*/ip: $ansible_ip/; /access_ip:/ s/access_ip:.*/access_ip: $ansible_ip/}" $file
-sed -i "/node2:/,/node3:/ {/ansible_host:/ s/ansible_host:.*/ansible_host: $node_ip1/; /ip:/ s/ip:.*/ip: $master_ip/; /access_ip:/ s/access_ip:.*/access_ip: $master_ip/}" $file
-sed -i "/node3:/,/kube_control_plane:/ {/ansible_host:/ s/ansible_host:.*/ansible_host: $node_ip2/; /ip:/ s/ip:.*/ip: $node_ip/; /access_ip:/ s/access_ip:.*/access_ip: $node_ip/}" $file
+sed -i "/node1:/,/node2:/ {/ansible_host:/ s/ansible_host:.*/ansible_host: $master_ip/; /ip:/ s/ip:.*/ip: $master_ip/; /access_ip:/ s/access_ip:.*/access_ip: $master_ip/}" $file
+sed -i "/node2:/,/node3:/ {/ansible_host:/ s/ansible_host:.*/ansible_host: $node_ip1/; /ip:/ s/ip:.*/ip: $node_ip1/; /access_ip:/ s/access_ip:.*/access_ip: $node_ip1/}" $file
+sed -i "/node3:/,/kube_control_plane:/ {/ansible_host:/ s/ansible_host:.*/ansible_host: $node_ip2/; /ip:/ s/ip:.*/ip: $node_ip2/; /access_ip:/ s/access_ip:.*/access_ip: $node_ip2/}" $file
 echo "hosts.yaml has been updated."
 cd group_vars/k8s_cluster/
 sed -i 's/cluster_name: cluster.local/cluster_name: $cluster_dns/' k8s-cluster.yml
@@ -47,9 +48,26 @@ echo "ubuntu ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/ubuntu
 echo "** start cluster creation**"
 echo "----------------------------"
 echo "disabling ipv4 + swapoff "
+pwd
+cd /home/ubuntu/kubespray
 ansible all -i inventory/mycluster/hosts.yaml -m shell -a "echo 'net.ipv4.ip_forward=1' | sudo tee -a /etc/sysctl.conf" --private-key ~/.ssh/id_rsa
 ansible all -i inventory/mycluster/hosts.yaml -m shell -a "sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab && sudo swapoff -a" --private-key ~/.ssh/id_rsa
 echo "----------"
 echo " begin cluster creation! "
 ansible-playbook -i inventory/mycluster/hosts.yaml --become --become-user=root cluster.yml --private-key ~/.ssh/id_rsa
+echo "FINISHED creating cluster!"
+echo " applying KUBECONFIG"
+ssh -i /home/ubuntu/id_rsa ubuntu@$MASTER_K8S_IP_PUB
+echo "logged to master node"
+echo "updating KUBECONFIG now"
+kubeconfig_path=$(sudo find / -name kubeconfig.conf | head -n 1|tail -n 1)
+echo "export KUBECONFIG=${kubeconfig_path}" >> ~/.bashrc
+echo " done updating"
+echo "updating tokens and ca.crt"
+token_path=$(sudo find /var/lib/kubelet  -name token | head -n 1)
+crt_path=$(sudo find /etc/kubernetes -name ca.crt |head -n 1)
+sudo sed -i "s|certificate-authority:.*|certificate-authority: $crt_path|" "$kubeconfig_path"
+sudo sed -i "s|tokenFile:.*|tokenFile: $token_path|" "$kubeconfig_path"
+cat $kubeconfig_path
+exit
 EOF

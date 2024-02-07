@@ -35,7 +35,7 @@ echo "[all:vars] " | sudo tee -a /etc/ansible/hosts
 echo "ansible_python_interpreter=/usr/bin/python3" | sudo tee -a /etc/ansible/hosts 
 cat /etc/ansible/hosts
 ansible-inventory --list -y
-
 whoami
-ansible all -m ping --private-key ~/.ssh/id_rsa
+echo "ansible all -m ping --private-key ~/.ssh/id_rsa"
+exit
 EOF

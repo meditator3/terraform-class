@@ -15,13 +15,14 @@ all:
   children:
     kube_control_plane:
       hosts:    
-        node2:
+        node1:
     kube_node:
       hosts:
+        node2:
         node3:
     etcd:
       hosts:
-        node2:
+        node1:
     k8s_cluster:
       children:
         kube_control_plane:

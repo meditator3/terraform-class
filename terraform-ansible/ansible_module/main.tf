@@ -5,6 +5,7 @@ resource "aws_instance" "ansible-remote" {
     instance_type = "t2.micro"
     subnet_id     = var.public_subnet1    
     key_name      = var.key
+    vpc_security_group_ids = ["sg-0416f10b97744c453"]
     tags = {
         Name = "TF-anisble-ariel-goingon"
     }
@@ -60,6 +61,7 @@ resource "aws_instance" "master-k8s" { # instance for cluster
        # using selected public subnets only for even distribution of instances over AZ's
     subnet_id     = element(local.selected_subnet_ids, count.index % length(local.selected_subnet_ids))    
     key_name      = var.key
+    vpc_security_group_ids = ["sg-0416f10b97744c453"]
     tags = {
         Name = "TF-master-ariel-goingon"
     }
@@ -96,6 +98,7 @@ resource "aws_instance" "worker-k8s" {
     count         = var.instance_count_worker
              # Distribute instances across the available AZs
     subnet_id     = element(local.selected_subnet_ids, count.index % length(local.selected_subnet_ids))    
+    vpc_security_group_ids = ["sg-0416f10b97744c453"]
     tags = {
         Name = "TF-worker-ariel-goingon"
     }
