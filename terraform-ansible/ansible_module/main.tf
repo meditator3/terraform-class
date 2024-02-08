@@ -61,7 +61,13 @@ resource "aws_instance" "master-k8s" { # instance for cluster
        # using selected public subnets only for even distribution of instances over AZ's
     subnet_id     = element(local.selected_subnet_ids, count.index % length(local.selected_subnet_ids))    
     key_name      = var.key
-    vpc_security_group_ids = ["sg-0416f10b97744c453"]
+     # this role allows CSI EBS driver to connect with AWS allowing persistent volume provisioning
+    iam_instance_profile = "ariel-kubespray-ansible-role"
+    vpc_security_group_ids = ["sg-0416f10b97744c453"] # to open all related k8s ports
+    root_block_device {
+        volume_size = 30  # Specify the size of the root volume in GB
+        volume_type = "gp2"  # Specify the volume type (e.g., gp2, io1)
+  }
     tags = {
         Name = "TF-master-ariel-goingon"
     }
@@ -98,7 +104,13 @@ resource "aws_instance" "worker-k8s" {
     count         = var.instance_count_worker
              # Distribute instances across the available AZs
     subnet_id     = element(local.selected_subnet_ids, count.index % length(local.selected_subnet_ids))    
-    vpc_security_group_ids = ["sg-0416f10b97744c453"]
+    vpc_security_group_ids = ["sg-0416f10b97744c453"] # to open all related k8s ports
+     # this role allows CSI EBS driver to connect with AWS allowing persistent volume provisioning
+    iam_instance_profile = "ariel-kubespray-ansible-role"
+    root_block_device {
+        volume_size = 25  # Specify the size of the root volume in GB
+        volume_type = "gp2"  # Specify the volume type (e.g., gp2, io1)
+  }
     tags = {
         Name = "TF-worker-ariel-goingon"
     }

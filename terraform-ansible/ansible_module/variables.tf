@@ -26,7 +26,7 @@ variable "public_subnet1" { # to be used by remote controller ansible instance
 
 variable "PATH_TO_PRIVATE_KEY" {
     description = "path to private key in your pc"
-    default = "../demo-4/ariel-key.pem"
+    default = "../../cloud/ariel-key.pem"
 }
 
 variable "PATH_TO_PUBLIC_KEY" {

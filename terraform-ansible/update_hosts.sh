@@ -9,10 +9,12 @@ node_ip1=$(terraform output -raw worker_ip_prv1)
 node_ip2=$(terraform output -raw worker_ip_prv2)
 file="hosts.yaml" #to reference inside the ansible 
 cluster_dns="arieldevops.tech"
+
 # transfer hosts.yaml to ansible machine
 scp -i k:/devops/cloud/ariel-key.pem ./hosts.yaml ubuntu@$ANSIBLE_PUB:~/kubespray/inventory/mycluster
 
-# updating hosts.yaml file
+# updating hosts.yaml file + updating k8s-cluster.yml to use flannel and persistentVolume EBS(true) 
+# and update aws.yml for CSI driver to be used
 ssh -i k:/devops/cloud/ariel-key.pem -t ubuntu@$ANSIBLE_PUB << EOF
 cd kubespray/inventory/mycluster
 
@@ -25,15 +27,26 @@ sed -i "/node2:/,/node3:/ {/ansible_host:/ s/ansible_host:.*/ansible_host: $node
 sed -i "/node3:/,/kube_control_plane:/ {/ansible_host:/ s/ansible_host:.*/ansible_host: $node_ip2/; /ip:/ s/ip:.*/ip: $node_ip2/; /access_ip:/ s/access_ip:.*/access_ip: $node_ip2/}" $file
 echo "hosts.yaml has been updated."
 cd group_vars/k8s_cluster/
+echo "((updating k8s-cluster.yml for flannel and aws CSI driver for EBS persistent volumes))"
 sed -i 's/cluster_name: cluster.local/cluster_name: $cluster_dns/' k8s-cluster.yml
-echo "k8s_cluster updated"
+sed -i 's/kube_network_plugin: calico/kube_network_plugin: flannel/' k8s-cluster.yml
+sed -i 's/persistent_volumes_enabled: false/persistent_volumes_enabled: true/' k8s-cluster.yml
+echo "done updating k8s-cluster.yml"
 cp addons.yml addons.yml.bak 
 echo "back up addons.yml"
 sed -i 's/dashboard_enabled: false/dashboard_enabled: true/' addons.yml
 sed -i 's/ingress_nginx_enabled: false/ingress_nginx_enabled: true/' addons.yml
 sed -i 's/ingress_nginx_host_network: false/ingress_nginx_host_network: true/' addons.yml
 sed -i 's/cert_manager_enabled: false/cert_manager_enabled: true/' addons.yml
-echo "addons.yml updated: ingress ngnix, dashboard, cert manager"
+echo "updated : addons.yml updated: ingress ngnix, dashboard, cert manager"
+echo " ..... "
+echo "updating aws.yml for EBS use"
+cd ../all
+sed -i 's/# aws_ebs_csi_enabled: true/ aws_ebs_csi_enabled: true/' aws.yml
+sed -i 's/# aws_ebs_csi_enable_volume_scheduling: true/ aws_ebs_csi_enable_volume_scheduling: true/' aws.yml
+sed -i 's/# aws_ebs_csi_enable_volume_snapshot: false/ aws_ebs_csi_enable_volume_snapshot: true/' aws.yml
+echo "k8s_cluster updated"
+cd ../
 
 echo "generating keys for cluster"
 sudo ssh-keygen -y -f /home/ubuntu/.ssh/id_rsa | sudo tee /home/ubuntu/.ssh/id_rsa.pub

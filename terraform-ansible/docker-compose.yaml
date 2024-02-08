@@ -1,0 +1,40 @@
+version: '3'
+services:
+  backend:
+      image: arielguez/react-java0mysql-backend:53
+      ports:
+      - "80:8080"
+      networks:
+        app-network:
+          aliases:
+          - backend
+
+  db:
+    image: arielguez/mysql:53
+    environment:
+      MYSQL_ROOT_PASSWORD: "db-57xsl"
+      MYSQL_DATABASE: "example"
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysqldb:/var/lib/mysql
+    networks:
+      app-network:
+        aliases:
+          - db
+
+  frontend:
+    image: arielguez/react-java0mysql-frontend:53
+    ports:
+      - "3000:3000"
+    networks:
+      app-network:
+        aliases:
+          - frontend
+
+volumes:
+  mysqldb:
+  java-vol:
+
+networks:
+  app-network:
