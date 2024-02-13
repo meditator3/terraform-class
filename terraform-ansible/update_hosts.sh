@@ -11,6 +11,7 @@ file="hosts.yaml" #to reference inside the ansible
 cluster_dns="arieldevops.tech"
 
 # transfer hosts.yaml to ansible machine
+ssh-keyscan -H $ANSIBLE_REMOTE_IP_PUB >> ~/.ssh/known_hosts
 scp -i k:/devops/cloud/ariel-key.pem ./hosts.yaml ubuntu@$ANSIBLE_PUB:~/kubespray/inventory/mycluster
 
 # updating hosts.yaml file + updating k8s-cluster.yml to use flannel and persistentVolume EBS(true) 

@@ -14,8 +14,9 @@ WORKER_K8S_IP_PRV2=$(terraform output -raw  worker_ip_prv2)
 # configuring and injecting ip outputs to the hosts ansible file
 # checking ansible components pings
 
-ssh -i k:/devops/cloud/ariel-key.pem -tt ubuntu@$ANSIBLE_REMOTE_IP_PUB << EOF
-ssh-keyscan -H ansible_remote_ip >> ~/known_hosts_temp
+ssh-keyscan -H $ANSIBLE_REMOTE_IP_PUB >> ~/.ssh/known_hosts
+ssh -i k:/devops/cloud/ariel-key.pem  ubuntu@$ANSIBLE_REMOTE_IP_PUB << EOF
+
 
 
 echo " starting injection of IPs to hosts ansible"

@@ -13,7 +13,7 @@ resource "aws_instance" "ansible-remote" {
             source     = "ansible_module/script.sh"
             destination= "/tmp/script.sh"
     }
-   
+    
     provisioner "remote-exec" {
         inline = [                   # execute the script file
             "echo '${file("k:/devops/cloud/ariel-key.pem")}' | tee -a /home/ubuntu/.ssh/id_rsa.copy > /dev/null", #FIRST, pass sensitive info
